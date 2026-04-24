@@ -151,8 +151,11 @@ def clean_listening_history(
 
     # Further normalise the keys: collapse internal whitespace so
     # "The  Weeknd" and "The Weeknd" match.
-    df["artist_key"] = df["artist_key"].str.replace(r"\s+", " ", regex=True)
-    df["track_key"]  = df["track_key"].str.replace(r"\s+", " ", regex=True)
+    # Using split() + " ".join() — simple Module 1, L4 string method:
+    # split with no args splits on any whitespace and drops empties,
+    # then we glue the words back with single spaces.
+    df["artist_key"] = df["artist_key"].apply(lambda s: " ".join(s.split()))
+    df["track_key"]  = df["track_key"].apply(lambda s: " ".join(s.split()))
 
     # --- 3. Drop skip-throughs --------------------------------------------
     df = df[df["ms_played"] >= skip_threshold_ms]
