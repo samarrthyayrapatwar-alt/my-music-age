@@ -1,0 +1,13 @@
+# My Music Age — Python dependencies
+#
+# Tested with Python 3.10 and above.
+# Install with:  pip install -r requirements.txt
+
+pandas>=2.0
+numpy>=1.24
+matplotlib>=3.7
+seaborn>=0.12
+ipykernel>=6.0       # for Jupyter notebooks
+
+# Optional: for downloading the Kaggle catalogue programmatically
+kaggle>=1.5
