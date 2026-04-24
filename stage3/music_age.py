@@ -190,10 +190,13 @@ def compute_music_age(
     # --- 1. WEIGHTED mean (every play counts) ---
     # Each play contributes its own release_year to the average.
     # Songs played 500 times count 500 times more than songs played once.
-    # Using NumPy for clarity and to show the weighted-mean formula.
+    #
+    # Weighted-mean formula, written using only basic NumPy operations
+    # (multiplication, sum, division) — all covered in Module 2 L18.
+    # Equivalent to: sum(year * play_time) / sum(play_time).
     years           = usable["release_year"].to_numpy()
     weights         = usable["ms_played"].to_numpy()
-    mean_release_w  = np.average(years, weights=weights)
+    mean_release_w  = np.sum(years * weights) / np.sum(weights)
 
     # --- 2. LIBRARY mean (each unique track once) ---
     unique_tracks = (

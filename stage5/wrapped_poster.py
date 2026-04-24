@@ -8,12 +8,13 @@ user's Music Age report.
 
 Built using ONLY syllabus-covered tools:
   - matplotlib subplots, bar charts, text annotations  (Module 3, L26)
-  - seaborn heatmap                                    (Module 3, L27)
+  - seaborn histplot                                   (Module 3, L27)
   - matplotlib's built-in 'dark_background' style
-  - Pandas groupby + pivot for heatmap data prep       (Module 2, L24)
+  - matplotlib axvline for the mean reference line     (Module 3, L26)
 
-No FancyBboxPatch, no GridSpec, no custom colormaps, no inset_axes —
-everything in this file maps to a session in the course outline.
+No FancyBboxPatch, no GridSpec, no custom colormaps, no inset_axes,
+no heatmap (which isn't in the syllabus) — everything in this file
+maps to a session in the course outline.
 
 Public API:
     render_poster(age, era_dist, top_per_decade, listening_df,
@@ -227,55 +228,75 @@ def _draw_top_tracks(ax, top_per_decade: pd.DataFrame):
                 transform=ax.transAxes)
 
 
-def _draw_heatmap(ax, listening_df: pd.DataFrame):
+def _draw_release_year_distribution(ax, enriched_df: pd.DataFrame):
     """
-    7×24 heatmap (day-of-week × hour-of-day) showing listening intensity.
-    Uses sns.heatmap() — Module 3, L27 (Statistical Visualization using Seaborn).
+    Histogram showing the distribution of release years across the user's
+    matched plays. The mean of this distribution = the user's mean release
+    year, which is what 'Music Age' is computed from.
+
+    Uses sns.histplot() — Module 3, L27 (Statistical Visualization with
+    Seaborn: Boxplots, countplots, histplots, distplots).
+
+    A vertical reference line marks the weighted mean release year — the
+    line is what connects the visual to the headline Music Age number.
+    Vertical line uses ax.axvline() — basic matplotlib, Module 3 L26.
     """
     ax.set_facecolor(BG_COLOR)
-    ax.set_title("WHEN YOU LISTEN", loc="left", color=MUTED_COLOR,
+    ax.set_title("YOUR LISTENING ACROSS THE YEARS",
+                 loc="left", color=MUTED_COLOR,
                  fontsize=11, fontweight="bold", pad=10)
 
-    if "day_of_week" not in listening_df.columns or "hour" not in listening_df.columns:
+    usable = enriched_df.dropna(subset=["release_year"]).copy()
+    if usable.empty:
+        ax.text(0.5, 0.5, "No matched tracks",
+                ha="center", va="center",
+                color=MUTED_COLOR, fontsize=12, transform=ax.transAxes)
         return
 
-    # Pivot the data into a 7×24 grid using groupby + unstack — Module 2, L24
-    day_full  = ["Monday", "Tuesday", "Wednesday", "Thursday",
-                 "Friday", "Saturday", "Sunday"]
-    day_short = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    usable["release_year"] = usable["release_year"].astype(int)
 
-    grid = (listening_df
-            .groupby(["day_of_week", "hour"])["minutes_played"]
-            .sum()
-            .unstack(fill_value=0)
-            .reindex(index=day_full, columns=range(24), fill_value=0))
+    # The weighted mean we used to compute Music Age — drawn as a
+    # vertical reference line on top of the distribution.
+    weights = usable["ms_played"].to_numpy()
+    years_arr = usable["release_year"].to_numpy()
+    weighted_mean_year = float((years_arr * weights).sum() / weights.sum())
 
-    # Use a dark-aware green colormap. sns.dark_palette() builds a
-    # gradient from black to the named colour — perfect for our dark theme.
-    cmap = sns.dark_palette(SPOTIFY_GREEN, as_cmap=True)
-
-    sns.heatmap(
-        grid,
+    # Draw the histogram (each play counts as one observation; no
+    # explicit weighting in the bars themselves to keep this simple).
+    sns.histplot(
+        data=usable,
+        x="release_year",
         ax=ax,
-        cmap=cmap,
-        cbar=False,             # no colour bar — keeps the look clean
-        xticklabels=False,      # we'll add custom labels below
-        yticklabels=day_short,
-        linewidths=0,
+        color=SPOTIFY_GREEN,
+        edgecolor=BG_COLOR,
+        bins=20,
+        alpha=0.85,
     )
 
-    # Show only 0/6/12/18 as hour ticks — cleaner than all 24
-    ax.set_xticks([0, 6, 12, 18])
-    ax.set_xticklabels(["00", "06", "12", "18"], color=MUTED_COLOR, fontsize=9)
+    # Reference line at the weighted mean
+    ax.axvline(
+        weighted_mean_year,
+        color=TEXT_COLOR,
+        linestyle="--",
+        linewidth=1.5,
+        alpha=0.8,
+    )
+    ax.text(
+        weighted_mean_year, ax.get_ylim()[1] * 0.92,
+        f"  mean: {weighted_mean_year:.0f}",
+        color=TEXT_COLOR, fontsize=9, fontweight="bold",
+        ha="left", va="top",
+    )
 
-    # Style the y-tick labels
-    for label in ax.get_yticklabels():
-        label.set_color(MUTED_COLOR)
-        label.set_fontsize(9)
+    # Style: muted axes, no top/right spines
+    for spine in ["top", "right"]:
+        ax.spines[spine].set_visible(False)
+    for spine in ["left", "bottom"]:
+        ax.spines[spine].set_color(MUTED_COLOR)
 
-    ax.set_xlabel("HOUR OF DAY", color=MUTED_COLOR, fontsize=8, labelpad=8)
-    ax.set_ylabel("")
-    ax.tick_params(length=0)
+    ax.tick_params(colors=MUTED_COLOR, labelsize=9, length=0)
+    ax.set_xlabel("RELEASE YEAR", color=MUTED_COLOR, fontsize=8, labelpad=6)
+    ax.set_ylabel("PLAYS", color=MUTED_COLOR, fontsize=8, labelpad=6)
 
 
 def _draw_footer(ax, age: dict, listening_stats: dict):
@@ -341,7 +362,7 @@ def render_poster(
     _draw_subages(axes[1], age)
     _draw_era_bars(axes[2], era_dist)
     _draw_top_tracks(axes[3], top_per_decade)
-    _draw_heatmap(axes[4], listening_df)
+    _draw_release_year_distribution(axes[4], listening_df)
     _draw_footer(axes[5], age, listening_stats)
 
     # Tighten margins

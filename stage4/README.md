@@ -18,10 +18,9 @@ This stage uses **only syllabus-covered tools**:
 
 - `plt.subplots()` with `gridspec_kw` for multi-panel layout — Module 3, L26
 - `ax.barh()` — horizontal bar chart, Module 3, L26
-- `ax.text()` — text annotations, Module 3
-- `sns.heatmap()` with `sns.dark_palette()` — Module 3, L27 (Statistical Visualization with Seaborn)
+- `ax.text()` and `ax.axvline()` — text/line annotations, Module 3, L26
+- `sns.histplot()` — explicitly listed in Module 3, L27 (Statistical Visualization with Seaborn)
 - `plt.style.use('dark_background')` — built-in matplotlib style
-- Pandas `groupby` + `unstack` for heatmap data prep — Module 2, L24
 
 No external libraries beyond matplotlib and seaborn.
 
@@ -47,8 +46,11 @@ saved to this folder. It has six panels:
 2. **Sub-ages** — weighted vs library age side-by-side
 3. **Eras You Live In** — bar chart of decade share, dominant decade in green
 4. **Top Track Per Era** — newest to oldest decade, one track each
-5. **When You Listen** — day × hour heatmap (`sns.heatmap`)
+5. **Your Listening Across the Years** — release-year histogram with mean reference line
 6. **Footer** — plays / tracks / hours summary
+
+The histogram in panel 5 directly visualises *why* the Music Age is what it is —
+the dashed vertical line is the mean release year, and Music Age = current year − that mean.
 
 ## Retuning the look
 
